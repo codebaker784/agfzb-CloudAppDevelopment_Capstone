@@ -2,8 +2,8 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
-# from .models import related models
-# from .restapis import related methods
+from .models import CarDealer, CarMake, CarModel, DealerReview
+from .restapis import get_dealers_from_cf, get_dealer_by_id_from_cf, get_dealer_reviews_from_cf, post_request 
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from datetime import datetime
@@ -105,7 +105,7 @@ def get_dealerships(request):
         context = {}
         url = "https://nehreenk784-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
         dealerships = get_dealers_from_cf(url)
-        context["dealership_list"] = dealerships
+        context["dealerships"] = dealerships
         return render(request, 'djangoapp/index.html', context)
 
 # Create a `get_dealer_details` view to render the reviews of a dealer
@@ -116,7 +116,7 @@ def get_dealer_details(request, id):
         dealer = get_dealer_by_id_from_cf(dealer_url, id=id)
         context["dealer"] = dealer
     
-        review_url = ""
+        review_url = "https://27543fa8.us-south.apigw.appdomain.cloud/api/get-review"
         reviews = get_dealer_reviews_from_cf(review_url, id=id)
         print(reviews)
         context["reviews"] = reviews
@@ -125,35 +125,36 @@ def get_dealer_details(request, id):
             
 # View to submit a new review
 def add_review(request, id):
-    context = {}
-    dealer_url = "https://nehreenk784-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
-    dealer = get_dealer_by_id_from_cf(dealer_url, id=id)
-    context["dealer"] = dealer
-    if request.method == 'GET':
-        # Get cars for the dealer
-        cars = CarModel.objects.all()
-        print(cars)
-        context["cars"] = cars
+    if request.user.is_authenticated:
+        context = {}
+        dealer_url = "https://nehreenk784-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
+        dealer = get_dealer_by_id_from_cf(dealer_url, id)
+        context["dealer"] = dealer
+        if request.method == "GET":
+            cars = CarModel.objects.all()
+            context["cars"] = cars
+            print(context)
+            return render(request, 'djangoapp/add_review.html', context)
         
-        return render(request, 'djangoapp/add_review.html', context)
-    elif request.method == 'POST':
-        if request.user.is_authenticated:
-            username = request.user.username
-            print(request.POST)
-            payload = dict()
-            payload["time"] = datetime.utcnow().isoformat()
-            payload["name"] = username
-            payload["dealership"] = id
-            payload["id"] = id
-            payload["review"] = request.POST["content"]
-            payload["purchase"] = False
-            if "purchasecheck" in request.POST:
-                if request.POST["purchasecheck"] == 'on':
-                    payload["purchase"] = True
-            payload["purchase_date"] = request.POST["purchasedate"]           
-            new_payload = {}
-            new_payload["review"] = payload
-            review_post_url = ""
-
-            post_request(review_post_url, new_payload, id=id)
-        return redirect("djangoapp:dealer_details", id=id)
+        if request.method == "POST":
+            review = {}
+            review["name"] = request.user.first_name + " " + request.user.last_name
+            form = request.POST
+            review["dealership"] = id
+            review["review"] = form["content"]
+            if(form.get("purchasecheck") == "on"):
+                review["purchase"] = True
+            else:
+                review["purchase"] = False
+            if(review["purchase"]):
+                review["purchase_date"] = datetime.strptime(form.get("purchasedate"), "%m/%d/%Y").isoformat()
+                car = CarModel.objects.get(pk=form["car"])
+                review["car_make"] = car.make.name
+                review["car_model"] = car.name
+                review["car_year"] = car.year
+            post_url = "https://27543fa8.us-south.apigw.appdomain.cloud/api/post-review"
+            json_payload = { "review": review }
+            post_request(post_url, json_payload, id=id)
+            return redirect("djangoapp:dealer_details", id=id)
+    else:
+        return redirect("/djangoapp/login")
