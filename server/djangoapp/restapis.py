@@ -44,7 +44,8 @@ def get_dealers_from_cf(url, **kwargs):
         # Iterate over each dealership dictionary in the JSON response
         for dealer_doc in json_result:
             # Create a CarDealer object with values from the dealership dictionary
-            dealer_obj = address=dealer_doc["address"],
+            dealer_obj = CarDealer(
+                address=dealer_doc["address"],
                 city=dealer_doc["city"],
                 full_name=dealer_doc["full_name"],
                 id=dealer_doc["id"],
@@ -52,10 +53,12 @@ def get_dealers_from_cf(url, **kwargs):
                 long=dealer_doc["long"],
                 short_name=dealer_doc["short_name"],
                 st=dealer_doc["st"],
-                zip=dealer_doc["zip"],
+                zip=dealer_doc["zip"]
+            )
             results.append(dealer_obj)
 
     return results
+
 
 def get_dealer_by_id_from_cf(url, id):
     results = []
