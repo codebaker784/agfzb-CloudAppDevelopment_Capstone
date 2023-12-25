@@ -115,6 +115,8 @@ def get_dealer_details(request, dealer_id):
         dealer_url = "https://nehreenk784-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
         dealer = get_dealer_by_id_from_cf(dealer_url, id=dealer_id)
         context["dealer"] = dealer
+        dealership_name = dealer.full_name 
+        context["dealer_name"] = dealership_name
     
         review_url = "https://nehreenk784-5000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews"
         reviews = get_dealer_reviews_from_cf(review_url, id=dealer_id)
@@ -124,11 +126,11 @@ def get_dealer_details(request, dealer_id):
         return render(request, 'djangoapp/dealer_details.html', context)
             
 # View to submit a new review
-def add_review(request, id):
+def add_review(request, dealer_id):
     if request.user.is_authenticated:
         context = {}
         dealer_url = "https://nehreenk784-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
-        dealer = get_dealer_by_id_from_cf(dealer_url, id)
+        dealer = get_dealer_by_id_from_cf(dealer_url, id=dealer_id)
         context["dealer"] = dealer
         if request.method == "GET":
             cars = CarModel.objects.all()
