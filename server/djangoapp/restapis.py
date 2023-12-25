@@ -4,7 +4,7 @@ from .models import CarDealer, DealerReview
 from requests.auth import HTTPBasicAuth
 from ibm_watson import NaturalLanguageUnderstandingV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
-from ibm_watson.natural_language_understanding_v1 import Features, EntitiesOptions, KeywordsOptions, SentimentOptions
+from ibm_watson.natural_language_understanding_v1 import Features, SentimentOptions
 
 def get_request(url, **kwargs):
     # If argument contain API KEY
@@ -69,9 +69,8 @@ def get_dealer_by_id_from_cf(url, id):
         dealers = json_result
         print(dealers,"63")
         # For each dealer object
-        for dealer in dealers:
+        for dealer_doc in dealers:
             # Get its content in `doc` object
-            dealer_doc = dealer
             if dealer_doc["id"] == id:
                 # Create a CarDealer object with values in `doc` object
                 dealer_obj = CarDealer(address=dealer_doc["address"], 
@@ -104,33 +103,34 @@ def get_dealer_reviews_from_cf(url, **kwargs):
         json_result = get_request(url, id=id)
     else:
         json_result = get_request(url)
-    print(json_result,"1")
+    
     if json_result:
-        reviews = json_result["data"]["docs"]
-        for dealer_review in reviews:
-            review_obj = DealerReview(dealership=dealer_review["dealership"],
-                                   name=dealer_review["name"],
-                                   purchase=dealer_review["purchase"],
-                                   review=dealer_review["review"])
-            if "id" in dealer_review:
-                review_obj.id = dealer_review["id"]
-            if "purchase_date" in dealer_review:
-                review_obj.purchase_date = dealer_review["purchase_date"]
+        for result in json_result:
+            review_obj = DealerReview(dealership=result.get("dealership"),
+                                name=result.get("name"),
+                                purchase=result.get("purchase"),
+                                review=result.get("review"),
+                                car_make=result.get("car_make"),
+                                car_model=result.get("car_model"),
+                                car_year=result.get("car_year"),
+                                id=result.get("id"),
+                                purchase_date=result.get("purchase_date"))
             
-            review_obj.sentiment = analyze_review_sentiments(review_obj.review)
+            review_obj.sentiment=analyze_review_sentiments(result.get("review"))
+            print (review_obj.sentiment)
             results.append(review_obj)
 
     return results
 
+
 def analyze_review_sentiments(text):
-    url = "https://ae0922e0-56c0-4963-8a53-03857dde29e1-bluemix.cloudantnosqldb.appdomain.cloud"
-    api_key = "4DSzy2dhMhqm0-1is6faZxHa3SzRl1_HdoF6ifVlo6lf"
+    url = "https://api.us-east.natural-language-understanding.watson.cloud.ibm.com/instances/c9d7ca2b-09f3-4373-8fa3-38b44d52a950"
+    api_key = "wIiLBvHS5HDLlhqySJ3LdPnvjs5VaCDfmP5DtObSB-1r"
     authenticator = IAMAuthenticator(api_key)
-    natural_language_understanding = NaturalLanguageUnderstandingV1(version='2021-08-01',authenticator=authenticator)
-    natural_language_understanding.set_service_url(url)
-    response = natural_language_understanding.analyze( text=text+"hello hello hello",features=Features(sentiment=SentimentOptions(targets=[text+"hello hello hello"]))).get_result()
+    nlu = NaturalLanguageUnderstandingV1(version='2022-04-07', authenticator=authenticator)
+    nlu.set_service_url(url)
+    response = nlu.analyze(text=text+"hello hello hello",features=Features(sentiment=SentimentOptions(targets=[text+"hello hello hello"]))).get_result()
     label=json.dumps(response, indent=2)
     label = response['sentiment']['document']['label']
-    
-    
+       
     return(label)

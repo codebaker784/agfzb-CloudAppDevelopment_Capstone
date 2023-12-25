@@ -36,7 +36,7 @@ class CarModel(models.Model):
     ("SEDAN", "Sedan"),
     ("SUV", "SUV"),
     ("TRUCK", "Truck"),
-    ("CONVERTABLE", "Convertable"),
+    ("CONVERTIBLE", "Convertible"),
     ("VAN", "Van"),
     )
     car = models.CharField(max_length=11, choices=CAR_CHOICES, default="SEDAN")
@@ -67,7 +67,7 @@ class CarDealer:
 
 # <HINT> Create a plain Python class `DealerReview` to hold review data
 class DealerReview:
-    def __init__(self, dealership, name, purchase, review, purchase_date, car_make, car_model, car_year, sentiment, id):
+    def __init__(self, dealership, name, purchase, review, purchase_date, car_make, car_model, car_year, id, sentiment=None):
         self.dealership = dealership
         self.name = name
         self.purchase = purchase
