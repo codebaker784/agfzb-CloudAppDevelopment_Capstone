@@ -116,7 +116,7 @@ def get_dealer_details(request, id):
         dealer = get_dealer_by_id_from_cf(dealer_url, id=id)
         context["dealer"] = dealer
     
-        review_url = "https://27543fa8.us-south.apigw.appdomain.cloud/api/get-review"
+        review_url = "https://nehreenk784-5000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews"
         reviews = get_dealer_reviews_from_cf(review_url, id=id)
         print(reviews)
         context["reviews"] = reviews
@@ -152,7 +152,7 @@ def add_review(request, id):
                 review["car_make"] = car.make.name
                 review["car_model"] = car.name
                 review["car_year"] = car.year
-            post_url = "https://27543fa8.us-south.apigw.appdomain.cloud/api/post-review"
+            post_url = "https://nehreenk784-5000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/post_review"
             json_payload = { "review": review }
             post_request(post_url, json_payload, id=id)
             return redirect("djangoapp:dealer_details", id=id)
